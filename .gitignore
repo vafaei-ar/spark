@@ -1,6 +1,10 @@
 # costume
 data/
+chromadb/
 embedding_cache/
+.vscode/
+*.ipynb*
+*.jpg
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
