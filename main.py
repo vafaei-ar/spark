@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from datetime import datetime
 import chromadb
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
 
 # --- Configuration ---
 DATA_DIR = "data/"  # Directory containing parquet files
