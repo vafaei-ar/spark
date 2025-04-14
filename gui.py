@@ -1,7 +1,7 @@
 import gradio as gr
 import requests
 
-API_URL = "http://localhost:8000/chat"
+API_URL_SPARK = "http://localhost:8000/chat"
 
 # Session state
 chat_history = []
@@ -9,7 +9,7 @@ chat_history = []
 def chat_with_api(message, chat_history, patient_id, model_name):
     # Send message to API
     try:
-        response = requests.post(API_URL, json={
+        response = requests.post(API_URL_SPARK, json={
             "model": model_name,
             "patient_id": patient_id,
             "question": message

@@ -179,7 +179,7 @@ async def chat(request: ChatRequest):
         print(f"Querying ChromaDB for patient {request.patient_id}...")
         results = collection.query(
             query_embeddings=[query_embedding],
-            n_results=20*TOP_K_RESULTS,
+            n_results=TOP_K_RESULTS,
             where={"PATID": request.patient_id}
         )
     except Exception as e:
@@ -190,10 +190,35 @@ async def chat(request: ChatRequest):
     if not retrieved_docs:
         raise HTTPException(status_code=404, detail=f"No relevant data found for Patient ID {request.patient_id}.")
 
+    # # --- Build context and prompt ---
+    # context_str = "Relevant Patient Data Snippets:\n"
+    # for i, doc in enumerate(retrieved_docs):
+    #     context_str += f"Snippet {i+1}:\n{doc}\n\n"
+
+
+
+    docs = []
+    for table in TABLES:
+        path = os.path.join(DATA_DIR, f"{table}.parquet")
+        if os.path.exists(path):
+            try:
+                df = pd.read_parquet(path)
+                if "PATID" not in df.columns:
+                    continue
+                df["PATID"] = df["PATID"].astype(str)
+                df_patient = df[df["PATID"] == request.patient_id]
+
+                for idx, record in df_patient.iterrows():
+                    record_dict = record.to_dict()
+                    doc_text = format_record_for_embedding(record_dict, table)
+                    docs.append(doc_text)
+
+            except Exception as e:
+                print(f"Error processing {path}: {e}")
     # --- Build context and prompt ---
     context_str = "Relevant Patient Data Snippets:\n"
-    for i, doc in enumerate(retrieved_docs):
-        context_str += f"Snippet {i+1}:\n{doc}\n\n"
+    for i, doc in enumerate(docs):
+        context_str += f"{doc}\n\n"
 
     prompt = (
         f"Based *only* on the following relevant data snippets provided for Patient ID {request.patient_id}, "
@@ -203,7 +228,9 @@ async def chat(request: ChatRequest):
     )
 
     print("\n--- Prompt for LLM ---")
-    print(prompt)
+    # print(prompt)
+    with open("prompt.txt", "w") as f:
+        f.write(prompt)
     print("--- End Prompt ---\n")
 
     # --- Call Ollama ---
